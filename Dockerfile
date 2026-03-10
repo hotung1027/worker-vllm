@@ -2,22 +2,21 @@ FROM nvidia/cuda:12.9.1-devel-ubuntu22.04
 
 ARG UV_VERSION="0.10.9"
 
+# Bootstrap uv using Ubuntu's default python3, then use uv to install Python 3.13
 RUN apt-get update -y \
-    && apt-get install -y software-properties-common \
-    && add-apt-repository ppa:deadsnakes/ppa \
-    && apt-get update -y \
-    && apt-get install -y python3.13 python3.13-dev python3.13-venv \
-    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.13 100 \
-    && rm -rf /var/lib/apt/lists/*
+    && apt-get install -y python3-pip \
+    && rm -rf /var/lib/apt/lists/* \
+    && python3 -m pip install "uv==${UV_VERSION}"
 
 RUN ldconfig /usr/local/cuda-12.9/compat/
 
-ENV UV_SYSTEM_PYTHON=1 \
-    UV_PYTHON=/usr/bin/python3.13
+# Install Python 3.13 via uv and expose it as python3 on PATH
+RUN uv python install 3.13 && \
+    ln -s "$(uv python find 3.13)" /usr/local/bin/python3.13 && \
+    ln -sf /usr/local/bin/python3.13 /usr/local/bin/python3
 
-# Install uv into Python 3.13
-RUN python3.13 -m ensurepip --upgrade && \
-    python3.13 -m pip install "uv==${UV_VERSION}"
+ENV UV_SYSTEM_PYTHON=1 \
+    UV_PYTHON=3.13
 
 COPY pyproject.toml /build/
 RUN --mount=type=cache,target=/root/.cache/uv \
