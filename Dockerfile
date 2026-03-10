@@ -1,20 +1,29 @@
 FROM nvidia/cuda:12.9.1-base-ubuntu22.04 
 
+ARG UV_VERSION="0.10.9"
+
 RUN apt-get update -y \
     && apt-get install -y python3-pip
 
 RUN ldconfig /usr/local/cuda-12.9/compat/
 
+ENV UV_PROJECT_ENVIRONMENT="/opt/venv" \
+    PATH="/opt/venv/bin:${PATH}"
+
 # Install vLLM with FlashInfer - use CUDA 12.8 PyTorch wheels (compatible with vLLM 0.15.1)
 RUN python3 -m pip install --upgrade pip && \
-    python3 -m pip install "vllm[flashinfer]==0.16.0" --extra-index-url https://download.pytorch.org/whl/cu129
+    python3 -m pip install "uv==${UV_VERSION}"
 
+COPY pyproject.toml uv.lock /build/
+RUN --mount=type=cache,target=/root/.cache/uv \
+    cd /build && \
+    uv sync --frozen --no-dev
 
-
-# Install additional Python dependencies (after vLLM to avoid PyTorch version conflicts)
-COPY builder/requirements.txt /requirements.txt
-RUN --mount=type=cache,target=/root/.cache/pip \
-    python3 -m pip install --upgrade -r /requirements.txt
+# Install vLLM after syncing project dependencies so the image keeps the
+# worker lockfile as the source of truth without forcing vLLM's CUDA-specific
+# extra-index setup into pyproject.toml.
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv pip install --python /opt/venv/bin/python "vllm[flashinfer]==0.16.0" --extra-index-url https://download.pytorch.org/whl/cu129
 
 # Setup for Option 2: Building the Image with the Model included
 ARG MODEL_NAME=""
@@ -46,9 +55,9 @@ ENV MODEL_NAME=$MODEL_NAME \
 ENV PYTHONPATH="/:/vllm-workspace"
 
 RUN if [ "${VLLM_NIGHTLY}" = "true" ]; then \
-    pip install -U vllm --pre --index-url https://pypi.org/simple --extra-index-url https://wheels.vllm.ai/nightly && \
+    uv pip install --python /opt/venv/bin/python -U vllm --pre --index-url https://pypi.org/simple --extra-index-url https://wheels.vllm.ai/nightly && \
     apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/* && \
-    pip install git+https://github.com/huggingface/transformers.git; \
+    uv pip install --python /opt/venv/bin/python git+https://github.com/huggingface/transformers.git; \
 fi
 
 COPY src /src
