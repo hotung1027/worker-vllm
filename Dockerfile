@@ -1,4 +1,4 @@
-FROM nvidia/cuda:12.9.1-base-ubuntu22.04 
+FROM nvidia/cuda:12.9.1-devel-ubuntu22.04
 
 ARG UV_VERSION="0.10.9"
 
@@ -55,7 +55,7 @@ ENV MODEL_NAME=$MODEL_NAME \
 ENV PYTHONPATH="/:/vllm-workspace"
 
 RUN if [ "${VLLM_NIGHTLY}" = "true" ]; then \
-    uv pip install --python /opt/venv/bin/python -U vllm --pre --index-url https://pypi.org/simple --extra-index-url https://wheels.vllm.ai/nightly && \
+    uv pip install --python /opt/venv/bin/python -U vllm --pre --index-url https://pypi.org/simple  --torch-backend=auto --extra-index-url https://wheels.vllm.ai/nightly && \
     apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/* && \
     uv pip install --python /opt/venv/bin/python git+https://github.com/huggingface/transformers.git; \
 fi
