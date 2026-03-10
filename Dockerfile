@@ -17,7 +17,7 @@ RUN python3 -m pip install --upgrade pip && \
 COPY pyproject.toml /build/
 RUN --mount=type=cache,target=/root/.cache/uv \
     cd /build && \
-    uv sync --frozen --no-dev
+    uv sync --no-dev
 
 # Install vLLM after syncing project dependencies so the image keeps the
 # worker lockfile as the source of truth without forcing vLLM's CUDA-specific
