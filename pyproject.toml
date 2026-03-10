@@ -23,12 +23,14 @@ dependencies = [
 ]
 
 [[tool.uv.index]]
+default-index = "pypi"
 name = "pytorch-cu129"
 url = "https://download.pytorch.org/whl/cu129"
 explicit = true
 
 [tool.uv.sources]
 torch = { index = "pytorch-cu129" }
+torchvision = { index = "pytorch" }
 
 [tool.uv]
 package = false
