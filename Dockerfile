@@ -3,16 +3,21 @@ FROM nvidia/cuda:12.9.1-devel-ubuntu22.04
 ARG UV_VERSION="0.10.9"
 
 RUN apt-get update -y \
-    && apt-get install -y python3-pip
+    && apt-get install -y software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update -y \
+    && apt-get install -y python3.13 python3.13-dev python3.13-venv \
+    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.13 100 \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN ldconfig /usr/local/cuda-12.9/compat/
 
-ENV UV_PROJECT_ENVIRONMENT="/opt/venv" \
-    PATH="/opt/venv/bin:${PATH}"
+ENV UV_SYSTEM_PYTHON=1 \
+    UV_PYTHON=/usr/bin/python3.13
 
-# Install vLLM with FlashInfer - use CUDA 12.8 PyTorch wheels (compatible with vLLM 0.15.1)
-RUN python3 -m pip install --upgrade pip && \
-    python3 -m pip install "uv==${UV_VERSION}"
+# Install uv into Python 3.13
+RUN python3.13 -m ensurepip --upgrade && \
+    python3.13 -m pip install "uv==${UV_VERSION}"
 
 COPY pyproject.toml /build/
 RUN --mount=type=cache,target=/root/.cache/uv \
@@ -23,7 +28,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # worker lockfile as the source of truth without forcing vLLM's CUDA-specific
 # extra-index setup into pyproject.toml.
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install --python /opt/venv/bin/python "vllm[flashinfer]==0.17.0" --torch-backend=auto --index-url https://pypi.org/simple
+    uv pip install "vllm[flashinfer]==0.17.0" --torch-backend=auto --index-url https://pypi.org/simple
 
 # Setup for Option 2: Building the Image with the Model included
 ARG MODEL_NAME=""
@@ -55,9 +60,9 @@ ENV MODEL_NAME=$MODEL_NAME \
 ENV PYTHONPATH="/:/vllm-workspace"
 
 RUN if [ "${VLLM_NIGHTLY}" = "true" ]; then \
-    uv pip install --python /opt/venv/bin/python -U vllm --pre --index-url https://pypi.org/simple  --torch-backend=auto --extra-index-url https://wheels.vllm.ai/nightly && \
+    uv pip install -U vllm --pre --index-url https://pypi.org/simple  --torch-backend=auto --extra-index-url https://wheels.vllm.ai/nightly && \
     apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/* && \
-    uv pip install --python /opt/venv/bin/python git+https://github.com/huggingface/transformers.git; \
+    uv pip install git+https://github.com/huggingface/transformers.git; \
 fi
 
 COPY src /src
