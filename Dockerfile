@@ -14,7 +14,7 @@ ENV UV_PROJECT_ENVIRONMENT="/opt/venv" \
 RUN python3 -m pip install --upgrade pip && \
     python3 -m pip install "uv==${UV_VERSION}"
 
-COPY pyproject.toml uv.lock /build/
+COPY pyproject.toml /build/
 RUN --mount=type=cache,target=/root/.cache/uv \
     cd /build && \
     uv sync --frozen --no-dev
