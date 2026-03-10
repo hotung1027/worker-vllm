@@ -23,7 +23,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # worker lockfile as the source of truth without forcing vLLM's CUDA-specific
 # extra-index setup into pyproject.toml.
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv pip install --python /opt/venv/bin/python "vllm[flashinfer]==0.17.0" --extra-index-url https://download.pytorch.org/whl/cu129
+    uv pip install --python /opt/venv/bin/python "vllm[flashinfer]==0.17.0" --torch-backend=auto --index-url https://pypi.org/simple --extra-index-url https://download.pytorch.org/whl/cu129
 
 # Setup for Option 2: Building the Image with the Model included
 ARG MODEL_NAME=""
