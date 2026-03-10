@@ -21,7 +21,7 @@ jobs:
         run: |
           echo "Fetching the current runpod version from pyproject.toml..."
           
-          current_version=$(grep -oP 'runpod~=\K[^"]+' ./pyproject.toml)
+          current_version=$(grep -oP 'runpod>=\K[^,\"]+' ./pyproject.toml)
           echo "Current version: $current_version"
 
           # Extract major and minor from current version
@@ -46,14 +46,15 @@ jobs:
 
           # Check if the major or minor version is different
           if [ "$current_major_minor" = "$new_major_minor" ]; then
-              echo "No update needed. The new version ($new_major_minor) is within the allowed range (~= $current_major_minor)."
+              echo "No update needed. The new version ($new_major_minor) is within the allowed major.minor range."
               exit 0
           fi
 
           echo "New major/minor detected ($new_major_minor). Updating pyproject.toml..."
 
-          sed -i "s/runpod~=[^\"]*/runpod~=$new_version/" ./pyproject.toml
-          python3 -m pip install "uv==0.10.9"
+          sed -i "s/runpod>=[^,\"]*/runpod>=$new_version/" ./pyproject.toml
+          uv_version=$(grep -oP 'ARG UV_VERSION="\K[^"]+' ./Dockerfile)
+          python3 -m pip install "uv==$uv_version"
           uv lock
           echo "pyproject.toml and uv.lock have been updated."
 
