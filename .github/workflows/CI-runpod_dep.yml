@@ -12,17 +12,16 @@ on:
 jobs:
   check_dep:
     runs-on: ubuntu-latest
-    name: Check python requirements file and update
+    name: Check Python dependency constraints and update
     steps:
       - name: Checkout
         uses: actions/checkout@v2
 
       - name: Check for new package version and update
         run: |
-          echo "Fetching the current runpod version from requirements.txt..."
+          echo "Fetching the current runpod version from pyproject.toml..."
           
-          # Get current version, allowing both == and ~= in the search pattern
-          current_version=$(grep -oP 'runpod[~=]{1,2}\K[^"]+' ./builder/requirements.txt)
+          current_version=$(grep -oP 'runpod~=\K[^"]+' ./pyproject.toml)
           echo "Current version: $current_version"
 
           # Extract major and minor from current version
@@ -51,11 +50,12 @@ jobs:
               exit 0
           fi
 
-          echo "New major/minor detected ($new_major_minor). Updating requirements.txt..."
+          echo "New major/minor detected ($new_major_minor). Updating pyproject.toml..."
 
-          # Update requirements.txt, preserving the existing constraint type (~= or ==)
-          sed -i "s/runpod[~=][^ ]*/runpod~=$new_version/" ./builder/requirements.txt
-          echo "requirements.txt has been updated."
+          sed -i "s/runpod~=[^\"]*/runpod~=$new_version/" ./pyproject.toml
+          python3 -m pip install "uv==0.10.9"
+          uv lock
+          echo "pyproject.toml and uv.lock have been updated."
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v3

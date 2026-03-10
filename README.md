@@ -78,6 +78,7 @@ To build an image with the model baked in, you must specify the following docker
 ### Prerequisites
 
 - Docker
+- Project dependencies are managed in `pyproject.toml` and locked in `uv.lock`; Docker builds install them with `uv`.
 
 ### Arguments
 
