@@ -13,7 +13,8 @@ RUN ldconfig /usr/local/cuda-12.9/compat/
 # Install Python 3.13 via uv
 RUN uv python install 3.13
 
-ENV UV_SYSTEM_PYTHON=1 \
+ENV UV_PROJECT_ENVIRONMENT="/opt/venv" \
+    PATH="/opt/venv/bin:${PATH}" \
     UV_PYTHON=3.13
 
 COPY pyproject.toml /build/
@@ -72,4 +73,4 @@ RUN --mount=type=secret,id=HF_TOKEN,required=false \
     fi
 
 # Start the handler
-CMD ["sh", "-c", "exec \"$(uv python find 3.13)\" /src/handler.py"]
+CMD ["python3.13", "/src/handler.py"]
