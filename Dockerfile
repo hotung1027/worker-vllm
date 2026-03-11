@@ -72,4 +72,4 @@ RUN --mount=type=secret,id=HF_TOKEN,required=false \
     fi
 
 # Start the handler
-CMD ["sh", "-lc", "\"$(uv python find 3.13)\" /src/handler.py"]
+CMD ["sh", "-c", "exec \"$(uv python find 3.13)\" /src/handler.py"]
