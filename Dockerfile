@@ -10,10 +10,8 @@ RUN apt-get update -y \
 
 RUN ldconfig /usr/local/cuda-12.9/compat/
 
-# Install Python 3.13 via uv and expose it as python3 on PATH
-RUN uv python install 3.13 && \
-    ln -s "$(uv python find 3.13)" /usr/local/bin/python3.13 && \
-    ln -sf /usr/local/bin/python3.13 /usr/local/bin/python3
+# Install Python 3.13 via uv
+RUN uv python install 3.13
 
 ENV UV_SYSTEM_PYTHON=1 \
     UV_PYTHON=3.13
@@ -74,4 +72,4 @@ RUN --mount=type=secret,id=HF_TOKEN,required=false \
     fi
 
 # Start the handler
-CMD ["python3", "/src/handler.py"]
+CMD ["sh", "-lc", "\"$(uv python find 3.13)\" /src/handler.py"]
